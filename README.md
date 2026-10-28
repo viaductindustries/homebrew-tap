@@ -2,8 +2,6 @@
 
 Install Viaduct Industries apps and command-line tools with [Homebrew](https://brew.sh).
 
-> **Not yet published.** No packages are installable yet. Each package becomes available after its first release is verified and merged here.
-
 ## Installing
 
 ```sh
@@ -13,7 +11,11 @@ brew install --cask <app>   # macOS applications
 brew install <tool>         # command-line tools
 ```
 
-You can also install without tapping first, for example `brew install --cask viaductindustries/tap/<app>`.
+You can also install without tapping first, for example:
+
+```sh
+brew install --cask viaductindustries/tap/cert-lab
+```
 
 ## Updating
 
@@ -34,13 +36,13 @@ brew untap viaductindustries/tap   # optional, once nothing from the tap is inst
 
 ## Packages
 
-| Package    | Type | Source                                                                      | Status                             |
-| ---------- | ---- | --------------------------------------------------------------------------- | ---------------------------------- |
-| `cert-lab` | Cask | [viaductindustries/cert-lab](https://github.com/viaductindustries/cert-lab) | Registered; awaiting first release |
+| Package    | Type | Description                                         | Source                                                                      |
+| ---------- | ---- | --------------------------------------------------- | --------------------------------------------------------------------------- |
+| `cert-lab` | Cask | Private certificate authorities backed by 1Password | [viaductindustries/cert-lab](https://github.com/viaductindustries/cert-lab) |
 
 ### Requirements
 
-- **Cert Lab** requires the 1Password desktop app and CLI, with **Settings > Developer > Integrate with 1Password CLI** enabled. Installing the cask does not configure a 1Password account.
+- **Cert Lab** requires macOS Sonoma (14) or later, plus the 1Password desktop app and CLI, with **Settings > Developer > Integrate with 1Password CLI** enabled. Installing the cask does not configure a 1Password account.
 
 ## Trust and verification
 
