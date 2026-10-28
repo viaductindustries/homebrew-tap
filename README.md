@@ -40,10 +40,6 @@ brew untap viaductindustries/tap   # optional, once nothing from the tap is inst
 | ---------- | ---- | --------------------------------------------------- | --------------------------------------------------------------------------- |
 | `cert-lab` | Cask | Private certificate authorities backed by 1Password | [viaductindustries/cert-lab](https://github.com/viaductindustries/cert-lab) |
 
-### Requirements
-
-- **Cert Lab** requires macOS Sonoma (14) or later, plus the 1Password desktop app and CLI, with **Settings > Developer > Integrate with 1Password CLI** enabled. Installing the cask does not configure a 1Password account.
-
 ## Trust and verification
 
 Every download comes directly from the project's own GitHub release. This tap pins each version to a SHA-256 checksum computed from that release, so Homebrew refuses a download that doesn't match. macOS apps are signed and notarized by their projects, and each update is checked for a valid signature, notarization and Gatekeeper approval before it is merged.
