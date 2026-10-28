@@ -30,13 +30,21 @@ Signing and notarization stay in the source project. This tap never needs Apple 
 
 ## Adding a package
 
-1. **Template.** Add `templates/<name>.rb.in`, where `<name>` is the lowercase, hyphenated Homebrew token. It needs exactly one `  version "@VERSION@"` and one `  sha256 "@SHA256@"` line, and a version-interpolated URL to the project's GitHub release asset:
+1. **Template.** Add `templates/<name>.rb.in`, where `<name>` is the lowercase, hyphenated Homebrew token. It needs exactly one `  sha256 "@SHA256@"` line and a URL to the project's GitHub release asset. The updater fills in every `@VERSION@` and checks that existing definitions still match the template.
+
+   Casks declare `  version "@VERSION@"` and interpolate it in the URL:
 
    ```ruby
    url "https://github.com/viaductindustries/<repo>/releases/download/v#{version}/<Asset>-#{version}.zip"
    ```
 
-   Casks should declare `name`, `desc`, `homepage`, any `depends_on` and the installed artifacts. Formulae need a valid build/install definition and a meaningful `test` block. Bottle publishing is not configured, so formulae build from source.
+   Formulae must not declare an explicit `version` (Homebrew's style and audit checks reject it), so the URL carries the placeholder directly:
+
+   ```ruby
+   url "https://github.com/viaductindustries/<repo>/releases/download/v@VERSION@/<asset>_@VERSION@_source.tar.gz"
+   ```
+
+   Casks should declare `name`, `desc`, `homepage`, any `depends_on` and the installed artifacts. Formulae need a valid build/install definition and a meaningful `test` block. Bottle publishing is not configured, so formulae build from a source archive uploaded to the release (GitHub's automatic source archives are not release assets).
 
 2. **Registry.** Add an entry to `packages.json`:
 

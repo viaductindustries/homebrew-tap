@@ -36,6 +36,9 @@ jobs:
           fi
       - name: Install and verify packages
         env:
+          # Online audits call the GitHub API; unauthenticated requests share a
+          # 60/hour limit per runner IP. This token is read-only (see permissions).
+          HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
           HOMEBREW_NO_AUTO_UPDATE: '1'
           HOMEBREW_NO_ANALYTICS: '1'
         run: python3 scripts/check_installations.py

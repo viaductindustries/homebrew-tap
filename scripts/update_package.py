@@ -11,8 +11,7 @@ import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
 VERSION = re.compile(r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)\Z")
-VERSION_LINE = re.compile(r'^  version "([^"]+)"$', re.MULTILINE)
-HASH_LINE = re.compile(r'^  sha256 "([0-9a-f]{64})"$', re.MULTILINE)
+CHECKSUM = re.compile(r'[0-9a-f]{64}')
 
 
 def version_tuple(value):
@@ -39,8 +38,8 @@ def registry(root=ROOT):
         if '/' in package['asset'] or package['asset'].count('{version}') != 1:
             raise ValueError('Asset must be a filename containing one {version}')
         template = (root / package['template']).read_text()
-        if template.count('@VERSION@') != 1 or template.count('@SHA256@') != 1:
-            raise ValueError('Template needs one version and one checksum placeholder')
+        if template.count('@VERSION@') < 1 or template.count('@SHA256@') != 1:
+            raise ValueError('Template needs a version placeholder and one checksum placeholder')
     return packages
 
 
@@ -73,22 +72,36 @@ def sha256_download(asset):
     return checksum
 
 
+def parse(current, template):
+    """Return the version and checksum of a definition rendered from template."""
+    pattern, seen_version = '', False
+    for part in re.split('(@VERSION@|@SHA256@)', template):
+        if part == '@SHA256@':
+            pattern += '(?P<sha256>[0-9a-f]{64})'
+        elif part == '@VERSION@':
+            # Repeated placeholders must all hold the same version.
+            pattern += '(?P=version)' if seen_version else '(?P<version>[0-9.]+)'
+            seen_version = True
+        else:
+            pattern += re.escape(part)
+    match = re.fullmatch(pattern, current)
+    if not match:
+        raise ValueError('Definition differs from its reviewed template; update both together')
+    version_tuple(match['version'])
+    return match['version'], match['sha256']
+
+
 def render(current, template, version, checksum):
     version_tuple(version)
-    if not re.fullmatch(r'[0-9a-f]{64}', checksum):
+    if not CHECKSUM.fullmatch(checksum):
         raise ValueError('Expected a SHA-256 checksum')
-    if current is None:
-        return template.replace('@VERSION@', version).replace('@SHA256@', checksum)
-    versions, hashes = VERSION_LINE.findall(current), HASH_LINE.findall(current)
-    if len(versions) != 1 or len(hashes) != 1:
-        raise ValueError('Updater requires one explicit version and one SHA-256 stanza')
-    old = versions[0]
-    if version_tuple(version) < version_tuple(old):
-        raise ValueError(f'Refusing downgrade from {old} to {version}')
-    if version == old and checksum != hashes[0]:
-        raise ValueError('Refusing to replace the checksum for an existing version')
-    result = VERSION_LINE.sub(lambda _: f'  version "{version}"', current)
-    return HASH_LINE.sub(lambda _: f'  sha256 "{checksum}"', result)
+    if current is not None:
+        old, old_checksum = parse(current, template)
+        if version_tuple(version) < version_tuple(old):
+            raise ValueError(f'Refusing downgrade from {old} to {version}')
+        if version == old and checksum != old_checksum:
+            raise ValueError('Refusing to replace the checksum for an existing version')
+    return template.replace('@VERSION@', version).replace('@SHA256@', checksum)
 
 
 def main():
