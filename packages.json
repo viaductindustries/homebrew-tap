@@ -5,5 +5,11 @@
     "template": "templates/cert-lab.rb.in",
     "asset": "Cert-Lab-{version}-universal.zip",
     "app": "Cert Lab.app"
+  },
+  "ghsecretsync": {
+    "repository": "viaductindustries/github-secret-sync",
+    "path": "Formula/ghsecretsync.rb",
+    "template": "templates/ghsecretsync.rb.in",
+    "asset": "ghsecretsync_{version}_source.tar.gz"
   }
 }

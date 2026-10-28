@@ -52,6 +52,26 @@ class UpdateTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             render(self.current + '\n  sha256 "' + 'b' * 64 + '"\n', self.template, '1.3.0', 'c' * 64)
 
+    def test_edited_definition_rejected(self):
+        with self.assertRaisesRegex(ValueError, 'template'):
+            render(self.current.replace('Cert Lab', 'Other'), self.template, '1.3.0', 'b' * 64)
+
+    def test_formula_version_comes_from_url(self):
+        template = (ROOT / registry()['ghsecretsync']['template']).read_text()
+        current = render(None, template, '1.2.3', 'a' * 64)
+        self.assertIn('/download/v1.2.3/ghsecretsync_1.2.3_source.tar.gz"', current)
+        self.assertNotIn('  version "', current)
+        actual = render(current, template, '1.3.0', 'b' * 64)
+        self.assertEqual(actual, current.replace('1.2.3', '1.3.0').replace('a' * 64, 'b' * 64))
+        with self.assertRaisesRegex(ValueError, 'downgrade'):
+            render(current, template, '1.2.2', 'b' * 64)
+
+    def test_formula_url_versions_must_agree(self):
+        template = (ROOT / registry()['ghsecretsync']['template']).read_text()
+        current = render(None, template, '1.2.3', 'a' * 64).replace('_1.2.3_', '_1.2.4_')
+        with self.assertRaisesRegex(ValueError, 'template'):
+            render(current, template, '1.3.0', 'b' * 64)
+
     def release(self):
         return {'tag_name': 'v1.0.0', 'draft': False, 'prerelease': False, 'assets': [{
             'name': 'Cert-Lab-1.0.0-universal.zip', 'size': 123, 'state': 'uploaded',
