@@ -7,7 +7,7 @@ cask "cert-lab" do
   desc "Private certificate authorities backed by 1Password"
   homepage "https://github.com/viaductindustries/cert-lab"
 
-  depends_on macos: ">= :sonoma"
+  depends_on macos: :sonoma
 
   app "Cert Lab.app"
 
