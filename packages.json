@@ -1,0 +1,9 @@
+{
+  "cert-lab": {
+    "repository": "viaductindustries/cert-lab",
+    "path": "Casks/cert-lab.rb",
+    "template": "templates/cert-lab.rb.in",
+    "asset": "Cert-Lab-{version}-universal.zip",
+    "app": "Cert Lab.app"
+  }
+}

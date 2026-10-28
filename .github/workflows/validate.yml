@@ -1,0 +1,41 @@
+name: Validate tap
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate definitions and updater
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Updater tests
+        run: python3 -m unittest discover -s tests -v
+      - name: Registry and definition checks
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [[ -n "$BASE_SHA" ]]; then
+            python3 scripts/validate.py --base "$BASE_SHA"
+          else
+            python3 scripts/validate.py
+          fi
+      - name: Install and verify packages
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: '1'
+          HOMEBREW_NO_ANALYTICS: '1'
+        run: python3 scripts/check_installations.py

@@ -1,0 +1,18 @@
+cask "cert-lab" do
+  version "@VERSION@"
+  sha256 "@SHA256@"
+
+  url "https://github.com/viaductindustries/cert-lab/releases/download/v#{version}/Cert-Lab-#{version}-universal.zip"
+  name "Cert Lab"
+  desc "Private certificate authorities backed by 1Password"
+  homepage "https://github.com/viaductindustries/cert-lab"
+
+  depends_on macos: ">= :sonoma"
+
+  app "Cert Lab.app"
+
+  caveats <<~EOS
+    Requires the 1Password desktop app and 1Password CLI.
+    Enable Settings > Developer > Integrate with 1Password CLI in 1Password.
+  EOS
+end

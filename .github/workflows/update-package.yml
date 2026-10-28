@@ -1,0 +1,103 @@
+name: Update package
+
+on:
+  workflow_call:
+    inputs:
+      package:
+        required: true
+        type: string
+      tag:
+        required: true
+        type: string
+      app-client-id:
+        required: true
+        type: string
+    secrets:
+      HOMEBREW_APP_PRIVATE_KEY:
+        required: true
+
+permissions:
+  contents: read
+
+# Each registered package has one owning source repository. Repeated release jobs
+# in that repository are serialized; unrelated packages use separate branches.
+concurrency:
+  group: homebrew-update-${{ inputs.package }}
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: viaductindustries/homebrew-tap
+          ref: main
+          persist-credentials: false
+
+      - name: Verify ownership, download release, and prepare definition
+        id: package
+        env:
+          PACKAGE: ${{ inputs.package }}
+          TAG: ${{ inputs.tag }}
+          SOURCE_REPOSITORY: ${{ github.repository }}
+        run: python3 scripts/update_package.py --package "$PACKAGE" --tag "$TAG" --source-repository "$SOURCE_REPOSITORY"
+
+      - name: Generate tap-scoped token
+        if: steps.package.outputs.changed == 'true'
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3; supports client-id
+        id: app
+        with:
+          client-id: ${{ inputs.app-client-id }}
+          private-key: ${{ secrets.HOMEBREW_APP_PRIVATE_KEY }}
+          owner: viaductindustries
+          repositories: homebrew-tap
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Open update PR
+        if: steps.package.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          GH_REPO: viaductindustries/homebrew-tap
+          PACKAGE: ${{ inputs.package }}
+          VERSION: ${{ steps.package.outputs.version }}
+          PACKAGE_PATH: ${{ steps.package.outputs.path }}
+          SOURCE_REPOSITORY: ${{ github.repository }}
+        run: |
+          branch="automation/$PACKAGE/$VERSION"
+          existing="$(gh pr list --head "$branch" --state open --json url --jq '.[0].url // empty')"
+          if [[ -n "$existing" ]]; then
+            echo "Update PR already exists: $existing"
+            exit 0
+          fi
+          # Don't recreate a deliberately closed release update.
+          closed="$(gh pr list --head "$branch" --state closed --json number --jq 'length')"
+          if [[ "$closed" != 0 ]]; then
+            echo "An update for this version was already closed; reopen it or publish a newer version." >&2
+            exit 1
+          fi
+          gh auth setup-git
+          git config user.name "Viaduct Homebrew Publisher"
+          git config user.email "homebrew-publisher@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin "$branch" > /dev/null; then
+            # Recover a previous push whose PR-creation step failed. Verify its
+            # entire tree against the freshly generated update before reusing it.
+            git fetch origin "$branch"
+            git add -- "$PACKAGE_PATH"
+            expected="$(git write-tree)"
+            actual="$(git rev-parse 'FETCH_HEAD^{tree}')"
+            if [[ "$expected" != "$actual" ]]; then
+              echo "Existing branch differs from the verified update; review it manually." >&2
+              exit 1
+            fi
+          else
+            git switch -c "$branch"
+            git add -- "$PACKAGE_PATH"
+            git commit -m "chore($PACKAGE): update to $VERSION"
+            git push origin "HEAD:refs/heads/$branch"
+          fi
+          printf 'Update %s to %s from https://github.com/%s/releases/tag/v%s.\n\nThe updater downloaded the published asset and computed its SHA-256.\n' \
+            "$PACKAGE" "$VERSION" "$SOURCE_REPOSITORY" "$VERSION" > "$RUNNER_TEMP/pr-body.md"
+          gh pr create --base main --head "$branch" --title "chore($PACKAGE): update to $VERSION" --body-file "$RUNNER_TEMP/pr-body.md"

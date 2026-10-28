@@ -1,0 +1,15 @@
+# Add this job to Cert Lab's reusable release.yml. Replace TAP_WORKFLOW_COMMIT
+# with the full reviewed commit SHA from viaductindustries/homebrew-tap.
+# "release" is the existing job that uploads the notarized ZIP to GitHub.
+jobs:
+  update-homebrew:
+    needs: release
+    permissions:
+      contents: read
+    uses: viaductindustries/homebrew-tap/.github/workflows/update-package.yml@TAP_WORKFLOW_COMMIT
+    with:
+      package: cert-lab
+      tag: ${{ inputs.tag }}
+      app-client-id: ${{ vars.HOMEBREW_APP_CLIENT_ID }}
+    secrets:
+      HOMEBREW_APP_PRIVATE_KEY: ${{ secrets.HOMEBREW_APP_PRIVATE_KEY }}
