@@ -26,7 +26,7 @@ for name, package in registry().items():
             run('codesign', '--verify', '--deep', '--strict', bundle)
             run('xcrun', 'stapler', 'validate', bundle)
             run('spctl', '--assess', '--type', 'execute', '--verbose=2', bundle)
-        run('brew', 'uninstall', '--cask', '--appdir', str(appdir), token)
+        run('brew', 'uninstall', '--cask', token)
     else:
         run('brew', 'style', '--formula', token)
         run('brew', 'audit', '--formula', '--online', token)
