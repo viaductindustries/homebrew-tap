@@ -1,6 +1,6 @@
 cask "cert-lab" do
-  version "1.0.3"
-  sha256 "f227ff5066d81a0bc3a078126c2660d3889e1601a7218be33eef77c8858ea3c3"
+  version "1.0.4"
+  sha256 "d48900d588635da6d2c1fcc1765eef366db97af1ec364e53e5298a50878baa67"
 
   url "https://github.com/viaductindustries/cert-lab/releases/download/v#{version}/Cert-Lab-#{version}-universal.zip"
   name "Cert Lab"
