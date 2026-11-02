@@ -39,6 +39,7 @@ brew untap viaductindustries/tap   # optional, once nothing from the tap is inst
 | Package    | Type | Description                                         | Source                                                                      |
 | ---------- | ---- | --------------------------------------------------- | --------------------------------------------------------------------------- |
 | `cert-lab` | Cask | Private certificate authorities backed by 1Password | [viaductindustries/cert-lab](https://github.com/viaductindustries/cert-lab) |
+| `lightboard` | Cask | Control Philips Hue bridges directly over the local network | viaductindustries/lightboard (private; downloads from [releases.viaduct.io](https://releases.viaduct.io/lightboard/latest.json)) |
 
 ## Trust and verification
 
