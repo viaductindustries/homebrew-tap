@@ -24,7 +24,9 @@ The updater currently supports:
 - stable `vX.Y.Z` tags;
 - one versioned asset and checksum per package.
 
-Universal macOS ZIPs fit this model. Separate Intel/ARM downloads, prerelease channels, non-GitHub downloads and bottle publishing require extending the registry and updater first. CI runs on the Apple Silicon `macos-26` runner; add Intel or Linux jobs when registering packages that target those systems.
+Universal macOS ZIPs fit this model. Separate Intel/ARM downloads, prerelease channels and bottle publishing require extending the registry and updater first.
+
+**Hosted downloads (private source repositories).** A cask can instead declare a `download` folder, for example `"download": "https://downloads.example.com/lightboard/{version}/"`, when its project publishes downloads to its own storage (such as a Cloudflare R2 bucket) rather than as public GitHub release assets. The folder must hold the asset and a `SHA256SUMS.txt` listing it. The updater then skips the GitHub API (which can't read a private repository's releases), downloads both files, and requires the asset's checksum to match the published one. Ownership is still enforced from the calling repository's identity, and the cask template must use exactly `url "<download><asset>"` with `#{version}` in place of `{version}`. The project must never replace a published file: as with GitHub assets, the tap refuses a new checksum for an existing version. CI runs on the Apple Silicon `macos-26` runner; add Intel or Linux jobs when registering packages that target those systems.
 
 Signing and notarization stay in the source project. This tap never needs Apple credentials.
 
