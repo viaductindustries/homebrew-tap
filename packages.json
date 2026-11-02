@@ -11,5 +11,13 @@
     "path": "Formula/ghsecretsync.rb",
     "template": "templates/ghsecretsync.rb.in",
     "asset": "ghsecretsync_{version}_source.tar.gz"
+  },
+  "lightboard": {
+    "repository": "viaductindustries/lightboard",
+    "path": "Casks/lightboard.rb",
+    "template": "templates/lightboard.rb.in",
+    "asset": "Lightboard-{version}-universal.zip",
+    "app": "Lightboard.app",
+    "download": "https://releases.viaduct.io/lightboard/{version}/"
   }
 }

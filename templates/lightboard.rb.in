@@ -1,0 +1,13 @@
+cask "lightboard" do
+  version "@VERSION@"
+  sha256 "@SHA256@"
+
+  url "https://releases.viaduct.io/lightboard/#{version}/Lightboard-#{version}-universal.zip"
+  name "Lightboard"
+  desc "Control Philips Hue bridges directly over the local network"
+  homepage "https://viaduct.io/"
+
+  depends_on macos: :sequoia
+
+  app "Lightboard.app"
+end
