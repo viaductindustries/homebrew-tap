@@ -7,6 +7,11 @@ cask "lightboard" do
   desc "Control Philips Hue bridges directly over the local network"
   homepage "https://viaduct.io/"
 
+  livecheck do
+    url "https://releases.viaduct.io/lightboard/appcast.xml"
+    strategy :sparkle, &:short_version
+  end
+
   auto_updates true
   depends_on macos: :sequoia
 
