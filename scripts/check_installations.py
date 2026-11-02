@@ -11,6 +11,11 @@ def run(*args):
 
 
 run('brew', 'tap', 'viaductindustries/tap', str(ROOT))
+# Newer Homebrew refuses to load casks and formulae from a tap until it's trusted. This runs on disposable CI
+# runners against the PR's own definitions, which every check below still verifies. Older Homebrew has no
+# `trust` command and needs nothing.
+if subprocess.run(['brew', 'trust', '--help'], capture_output=True).returncode == 0:
+    run('brew', 'trust', 'viaductindustries/tap')
 for name, package in registry().items():
     if not (ROOT / package['path']).exists():
         continue
