@@ -7,7 +7,8 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
-from update_package import ROOT, registry, render, release_asset, version_tuple, sha256_download, main
+import update_package
+from update_package import ROOT, registry, render, release_asset, version_tuple, sha256_download, main, check_download, hosted_asset, sha256_hosted
 
 
 class UpdateTests(unittest.TestCase):
@@ -136,6 +137,113 @@ class UpdateTests(unittest.TestCase):
             (root / 'packages.json').write_text(json.dumps({'cert-lab': package}))
             with self.assertRaisesRegex(ValueError, 'path'):
                 registry(root)
+
+
+
+HOSTED = {
+    'repository': 'viaductindustries/example-app',
+    'path': 'Casks/example-app.rb',
+    'template': 'templates/example-app.rb.in',
+    'asset': 'Example-{version}-universal.zip',
+    'app': 'Example.app',
+    'download': 'https://downloads.example.com/example-app/{version}/',
+}
+HOSTED_TEMPLATE = """cask "example-app" do
+  version "@VERSION@"
+  sha256 "@SHA256@"
+
+  url "https://downloads.example.com/example-app/#{version}/Example-#{version}-universal.zip"
+  name "Example"
+  desc "Example app"
+  homepage "https://example.com"
+
+  app "Example.app"
+end
+"""
+
+
+class HostedDownloadTests(unittest.TestCase):
+    """Packages whose downloads are published outside GitHub releases (private source repositories)."""
+
+    def responses(self, *bodies):
+        return patch('urllib.request.urlopen', side_effect=[io.BytesIO(b) for b in bodies])
+
+    def test_registry_accepts_hosted_cask(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'templates').mkdir()
+            (root / 'templates/example-app.rb.in').write_text(HOSTED_TEMPLATE)
+            (root / 'packages.json').write_text(json.dumps({'example-app': HOSTED}))
+            self.assertEqual(registry(root)['example-app']['download'], HOSTED['download'])
+
+    def test_download_url_rules(self):
+        for download in ['http://downloads.example.com/example-app/{version}/',
+                         'https://downloads.example.com/example-app/',
+                         'https://downloads.example.com/{version}/{version}/',
+                         'https://downloads.example.com/example-app/{version}',
+                         'https://downloads.example.com/../{version}/',
+                         'https://user@downloads.example.com/{version}/']:
+            # A template that matches the bad URL, so only the URL rule can reject it.
+            template = HOSTED_TEMPLATE.replace('https://downloads.example.com/example-app/#{version}/',
+                                               download.replace('{version}', '#{version}'))
+            with self.subTest(download=download), self.assertRaisesRegex(ValueError, 'Download must'):
+                check_download(dict(HOSTED, download=download), template)
+
+    def test_template_must_use_the_declared_download(self):
+        with self.assertRaisesRegex(ValueError, 'Template URL'):
+            check_download(HOSTED, HOSTED_TEMPLATE.replace('downloads.example.com', 'evil.example.com'))
+
+    def test_hosted_downloads_are_casks_only(self):
+        with self.assertRaisesRegex(ValueError, 'casks'):
+            check_download(dict(HOSTED, path='Formula/example-app.rb'), HOSTED_TEMPLATE)
+
+    def test_urls_for_a_version(self):
+        self.assertEqual(hosted_asset(HOSTED, '1.2.3'), (
+            'https://downloads.example.com/example-app/1.2.3/Example-1.2.3-universal.zip',
+            'https://downloads.example.com/example-app/1.2.3/SHA256SUMS.txt'))
+
+    def test_checksum_matches_published_sums(self):
+        import hashlib
+        expected = hashlib.sha256(b'zip').hexdigest()
+        sums = f'{expected}  Example-1.2.3-universal.zip\n'.encode()
+        with self.responses(sums, b'zip'):
+            self.assertEqual(sha256_hosted(HOSTED, '1.2.3'), expected)
+
+    def test_checksum_mismatch_rejected(self):
+        sums = ('a' * 64 + '  Example-1.2.3-universal.zip\n').encode()
+        with self.responses(sums, b'zip'), self.assertRaisesRegex(ValueError, 'differs'):
+            sha256_hosted(HOSTED, '1.2.3')
+
+    def test_missing_checksum_entry_rejected(self):
+        sums = ('a' * 64 + '  Other-1.2.3-universal.zip\n').encode()
+        with self.responses(sums), self.assertRaisesRegex(ValueError, 'no checksum'):
+            sha256_hosted(HOSTED, '1.2.3')
+
+    def test_hosted_package_skips_github_api(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'templates').mkdir()
+            (root / 'templates/example-app.rb.in').write_text(HOSTED_TEMPLATE)
+            args = ['update_package.py', '--package', 'example-app', '--tag', 'v1.2.3',
+                    '--source-repository', 'viaductindustries/example-app', '--dry-run']
+            with patch.object(sys, 'argv', args), patch.object(update_package, 'ROOT', root), \
+                    patch.object(update_package, 'registry', return_value={'example-app': HOSTED}), \
+                    patch.object(update_package, 'sha256_hosted', return_value='c' * 64) as hosted, \
+                    patch('urllib.request.urlopen') as request, patch('sys.stdout', new_callable=io.StringIO) as out:
+                main()
+            hosted.assert_called_once_with(HOSTED, '1.2.3')
+            request.assert_not_called()
+            self.assertIn('version "1.2.3"', out.getvalue())
+            self.assertIn('sha256 "' + 'c' * 64 + '"', out.getvalue())
+
+    def test_hosted_package_still_checks_owner(self):
+        args = ['update_package.py', '--package', 'example-app', '--tag', 'v1.2.3',
+                '--source-repository', 'viaductindustries/another-project']
+        with patch.object(sys, 'argv', args), patch.object(update_package, 'registry', return_value={'example-app': HOSTED}), \
+                patch('urllib.request.urlopen') as request:
+            with self.assertRaisesRegex(ValueError, 'does not own'):
+                main()
+            request.assert_not_called()
 
 
 if __name__ == '__main__':
