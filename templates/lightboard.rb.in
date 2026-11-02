@@ -7,6 +7,7 @@ cask "lightboard" do
   desc "Control Philips Hue bridges directly over the local network"
   homepage "https://viaduct.io/"
 
+  auto_updates true
   depends_on macos: :sequoia
 
   app "Lightboard.app"
