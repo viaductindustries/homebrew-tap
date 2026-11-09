@@ -1,6 +1,6 @@
 cask "lightboard" do
-  version "0.1.0"
-  sha256 "eb641d8620f6c95ae0aeedba28512150bf3652a2457e14862a489138f0177717"
+  version "0.1.5"
+  sha256 "aeeec8780382386f8dce097f1ec9dc2239f430b32d8b66b2e0a2b715735f6908"
 
   url "https://releases.viaduct.io/lightboard/#{version}/Lightboard-#{version}-universal.zip"
   name "Lightboard"
