@@ -3,7 +3,7 @@
     "repository": "viaductindustries/berth",
     "path": "Formula/berth.rb",
     "template": "templates/berth.rb.in",
-    "asset": "berth_{version}_source.tar.gz"
+    "asset": "berth_{version}_darwin_universal.tar.gz"
   },
   "cert-lab": {
     "repository": "viaductindustries/cert-lab",

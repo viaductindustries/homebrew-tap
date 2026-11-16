@@ -1,15 +1,17 @@
 class Berth < Formula
   desc "HTTPS hostnames for local dev servers, on your Mac and your tailnet"
   homepage "https://github.com/viaductindustries/berth"
-  url "https://github.com/viaductindustries/berth/releases/download/v@VERSION@/berth_@VERSION@_source.tar.gz"
+  url "https://github.com/viaductindustries/berth/releases/download/v@VERSION@/berth_@VERSION@_darwin_universal.tar.gz"
   sha256 "@SHA256@"
   license "MIT"
 
-  depends_on "go" => :build
   depends_on :macos
 
+  # Installs the Developer ID-signed, notarized release binary. macOS ties
+  # permissions such as Local Network access to its signature, so they
+  # survive upgrades; a binary built here would get a new identity each time.
   def install
-    system "go", "build", *std_go_args(ldflags: "-s -w -X main.version=#{version}"), "./cmd/berth"
+    bin.install "berth"
   end
 
   def caveats
@@ -25,6 +27,8 @@ class Berth < Formula
 
   test do
     assert_equal "berth #{version}", shell_output("#{bin}/berth version").strip
+    system "codesign", "--verify", "--strict", bin/"berth"
+    assert_match "Authority=Developer ID Application:", shell_output("codesign -dvv #{bin}/berth 2>&1")
     ENV["BERTH_HOME"] = testpath
     assert_match "there's no CA yet", shell_output("#{bin}/berth ca status 2>&1", 1)
   end
