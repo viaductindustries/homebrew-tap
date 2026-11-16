@@ -20,8 +20,12 @@ class Berth < Formula
         berth daemon install
       To trust Berth's certificate authority:
         berth ca trust
-      After upgrading, restart the daemon so it runs the new version:
+      To teach your coding agents to use Berth:
+        berth skill install
+      After upgrading, restart the daemon so it runs the new version, and
+      update the agent skill if you installed it:
         berth daemon restart
+        berth skill install
     EOS
   end
 
