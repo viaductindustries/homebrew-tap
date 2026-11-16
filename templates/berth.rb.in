@@ -1,0 +1,31 @@
+class Berth < Formula
+  desc "HTTPS hostnames for local dev servers, on your Mac and your tailnet"
+  homepage "https://github.com/viaductindustries/berth"
+  url "https://github.com/viaductindustries/berth/releases/download/v@VERSION@/berth_@VERSION@_source.tar.gz"
+  sha256 "@SHA256@"
+  license "MIT"
+
+  depends_on "go" => :build
+  depends_on :macos
+
+  def install
+    system "go", "build", *std_go_args(ldflags: "-s -w -X main.version=#{version}"), "./cmd/berth"
+  end
+
+  def caveats
+    <<~EOS
+      To run the daemon now and at login (no sudo needed):
+        berth daemon install
+      To trust Berth's certificate authority:
+        berth ca trust
+      After upgrading, restart the daemon so it runs the new version:
+        berth daemon restart
+    EOS
+  end
+
+  test do
+    assert_equal "berth #{version}", shell_output("#{bin}/berth version").strip
+    ENV["BERTH_HOME"] = testpath
+    assert_match "there's no CA yet", shell_output("#{bin}/berth ca status 2>&1", 1)
+  end
+end

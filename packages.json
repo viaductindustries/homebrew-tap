@@ -1,4 +1,10 @@
 {
+  "berth": {
+    "repository": "viaductindustries/berth",
+    "path": "Formula/berth.rb",
+    "template": "templates/berth.rb.in",
+    "asset": "berth_{version}_source.tar.gz"
+  },
   "cert-lab": {
     "repository": "viaductindustries/cert-lab",
     "path": "Casks/cert-lab.rb",
