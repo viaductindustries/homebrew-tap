@@ -25,5 +25,12 @@
     "asset": "Lightboard-{version}-universal.zip",
     "app": "Lightboard.app",
     "download": "https://releases.viaduct.io/lightboard/{version}/"
+  },
+  "squeak": {
+    "repository": "viaductindustries/squeak",
+    "path": "Casks/squeak.rb",
+    "template": "templates/squeak.rb.in",
+    "asset": "Squeak-{version}-universal.zip",
+    "app": "Squeak.app"
   }
 }
